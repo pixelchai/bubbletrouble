@@ -44,6 +44,9 @@ var playerh = 0;
 var shotx = -1;
 var shoth = -1;
 
+// misc vars
+var freezeTime = 0;
+
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
 
@@ -53,6 +56,15 @@ function updateBalls(){
     var et = 0.9;
     for(var i=0; i<balls.length; i++){
         var ball=balls[i];
+
+        // player collision
+        if(ballHits(ball.x,ball.y,ball.r,playerx-playerw/2,c.height,playerw,playerh)){
+            cx.fillStyle = '#fff';
+            cx.fillRect(0,0,c.width,c.height);
+            // console.log('wow');
+            // freezeTime = 10*f;
+        }
+
         var minvel = Math.min(-Math.log(ball.r)/5,-0.5);
         //wall collisions
         if(ball.y+ball.vy*f+ball.r>c.height){
@@ -158,6 +170,21 @@ function shotHits(cx,cy,r,sx,sh) {
         }
     }
     return false;
+}
+
+function clamp(value, min, max){
+    //limits value to range min..max
+    return Math.max(Math.min(value,max),min);
+}
+
+function ballHits(cx,cy,r,x,y,w,h){
+    var closestX = clamp(cx,x,x+w);
+    var closestY = clamp(cy,y-h,y);
+
+    var distanceX = cx-closestX;
+    var distanceY = cy-closestY;
+
+    return (distanceX*distanceX)+(distanceY*distanceY)<(r*r);
 }
 //#endregion
 
@@ -307,10 +334,14 @@ function getRandomBallColour(){
     
     init();
     var timer=setInterval(function(){
-      clear();
-    	update();
-      draw();
-      t+=f;
+        if(freezeTime>0){
+            freezeTime-=1;
+        }else{
+            clear();
+            update();
+            draw();
+        }
+        t+=f;
     },f);
     
     function init(){
