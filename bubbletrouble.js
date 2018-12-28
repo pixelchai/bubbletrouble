@@ -57,9 +57,6 @@ function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
       colour:colour,
       m:20,//mass
       w:2,//width
-      distanceToBall:function(ball2){
-            return Math.sqrt(Math.pow(this.x-ball2.x,2)+Math.pow(this.y-ball2.y,2));
-        }
     }
 }
 
@@ -183,11 +180,18 @@ function getRandomBallColour(){
     return ballColours[Math.floor(Math.random()*ballColours.length)];
 }
 
+function clearAll(){
+    //background
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(0, 0, c.width, c.height);
+}
+
 (function() {        
   	function resizeCanvas() {
-      c.width = window.innerWidth;
-      c.height = window.innerHeight;
-      draw(); 
+        c.width = window.innerWidth;
+        c.height = window.innerHeight;
+
+        clearAll();
     }
     window.addEventListener('resize', resizeCanvas, false);
     resizeCanvas();
@@ -198,14 +202,13 @@ function getRandomBallColour(){
     	update();
       draw();
       t+=f;
-    },1000.0/fps);
+    },f);
     
     function init(){
         window.addEventListener("keydown",onKeyDown, false);
         window.addEventListener("keyup",onKeyUp, false);
 
-        cx.fillStyle = C_BACKG;
-        cx.fillRect(0, 0, c.width, c.height);
+        clearAll();
 
         playerx = c.width/2;
         balls.push(newBall(30,30,0.3,0,70,getRandomBallColour()));
