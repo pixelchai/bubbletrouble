@@ -45,24 +45,50 @@ var shotx = -1;
 var shoth = -1;
 
 // misc vars
-var freezeTime = 0;
+var freeze = false;
 
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
 
+//#region game
+function newStage(){
+    clearAll();
+
+    balls = []; // clear balls
+    playerx = c.width/2; // center player
+
+    //reset shot
+    shoth = -1;
+    shotx = -1;
+
+    balls.push(newBall(80,c.height/2,0.2,0,100,getRandomBallColour()));
+    balls.push(newBall(c.width-80,c.height/2,-0.2,0,100,getRandomBallColour()));
+}
+//#endregion
+
 //#region updating
 function updateBalls(){
-    // var et = 0.9965; //not 100% efficient energy transfer
-    var et = 0.9;
+
+    if(balls.length<=0){
+        newStage();
+        return;
+    }
+
+    var et = 0.9; //not 100% efficient energy transfer
     for(var i=0; i<balls.length; i++){
         var ball=balls[i];
 
         // player collision
         if(ballHits(ball.x,ball.y,ball.r,playerx-playerw/2,c.height,playerw,playerh)){
-            cx.fillStyle = '#fff';
-            cx.fillRect(0,0,c.width,c.height);
-            // console.log('wow');
-            // freezeTime = 10*f;
+
+            ball.colour = '#fff';
+            drawBall(ball);
+
+            freeze=true;
+            setTimeout(function(){
+                freeze=false;
+                newStage();
+            },1000);
         }
 
         var minvel = Math.min(-Math.log(ball.r)/5,-0.5);
@@ -334,8 +360,8 @@ function getRandomBallColour(){
     
     init();
     var timer=setInterval(function(){
-        if(freezeTime>0){
-            freezeTime-=1;
+        if(freeze){
+            // nothing ...
         }else{
             clear();
             update();
@@ -355,9 +381,7 @@ function getRandomBallColour(){
 
         clearAll();
 
-        playerx = c.width/2; // center player
-        balls.push(newBall(80,c.height/2,0.2,0,100,getRandomBallColour()));
-        balls.push(newBall(c.width-80,c.height/2,-0.2,0,100,getRandomBallColour()));
+        newStage();
     }
     
     function update(){
