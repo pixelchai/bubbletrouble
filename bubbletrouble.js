@@ -1,11 +1,8 @@
-//consts
+// consts
 const K_LEFT = 37;
 const K_UP = 38;
 const K_RIGHT = 39;
 const K_DOWN = 40;
-
-var c = document.getElementById('c'),
-cx = c.getContext('2d');
 
 // colours
 const C_BACKG = '#222';
@@ -40,26 +37,10 @@ var playerx = 0;
 var playerw = 0;
 var playerh = 0;
 
-function onKeyDown(e){
-    downKeys[e.keyCode]=true;
-}
-function onKeyUp(e){
-    downKeys[e.keyCode]=false;
-}
+var c = document.getElementById('c'),
+cx = c.getContext('2d');
 
-function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
-    return {
-      x:x,
-      y:y,
-      r:r,
-      vx:vx,
-      vy:vy,
-      colour:colour,
-      m:20,//mass
-      w:2,//width
-    }
-}
-
+//#region updating
 function updateBalls(){
     for(var i=0; i<balls.length; i++){
         var ball=balls[i];
@@ -87,7 +68,9 @@ function updateBalls(){
         ball.vy=ball.vy+g*f;
     }
 }
+//#endregion
 
+//#region drawing
 function drawBall(ball){
     cx.fillStyle = ball.colour;
     cx.beginPath();
@@ -96,21 +79,13 @@ function drawBall(ball){
     cx.fill();
 }
 
-function clearBall(ball){
-    cx.fillStyle = C_BACKG;
-    cx.fillRect(ball.x-ball.r-ball.w,ball.y-ball.r-ball.w,(ball.r+ball.w)*2,(ball.r+ball.w)*2);
-}
-
 function drawBalls(){
     for(var i=0; i<balls.length; i++){
         drawBall(balls[i]);
     }
 }
 
-function drawPlayer(dir=1){
-    // dir: 0 = normal
-    //      1 = left
-    //      2 = right
+function drawPlayer(){
     cx.strokeStyle = C_BACKG;
 
     cx.beginPath();
@@ -169,6 +144,19 @@ function drawPlayer(dir=1){
     playerh = bodh + 2*headh + hath + 3;
     playerw = 2*hatw + 4;
 }
+//#endregion
+
+//#region clearing
+function clearAll(){
+    //background
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(0, 0, c.width, c.height);
+}
+
+function clearBall(ball){
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(ball.x-ball.r-ball.w,ball.y-ball.r-ball.w,(ball.r+ball.w)*2,(ball.r+ball.w)*2);
+}
 
 function clearBalls(){
     for(var i=0; i< balls.length; i++){
@@ -176,15 +164,31 @@ function clearBalls(){
     }
 }
 
+function clearPlayer(){
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(playerx-playerw/2,c.height-playerh,
+                playerw,playerh);
+}
+//#endregion
+
+function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
+    return {
+      x:x,
+      y:y,
+      r:r,
+      vx:vx,
+      vy:vy,
+      colour:colour,
+      m:20,//mass
+      w:2,//width
+    }
+}
+
 function getRandomBallColour(){
     return ballColours[Math.floor(Math.random()*ballColours.length)];
 }
 
-function clearAll(){
-    //background
-    cx.fillStyle = C_BACKG;
-    cx.fillRect(0, 0, c.width, c.height);
-}
+
 
 (function() {        
   	function resizeCanvas() {
@@ -205,17 +209,21 @@ function clearAll(){
     },f);
     
     function init(){
-        window.addEventListener("keydown",onKeyDown, false);
-        window.addEventListener("keyup",onKeyUp, false);
+        // key listening
+        window.addEventListener("keydown",function(e){
+            downKeys[e.keyCode]=true;
+        }, false);
+        window.addEventListener("keyup",function(e){
+            downKeys[e.keyCode]=false;
+        }, false);
 
         clearAll();
 
-        playerx = c.width/2;
+        playerx = c.width/2; // center player
         balls.push(newBall(30,30,0.3,0,70,getRandomBallColour()));
     }
     
     function update(){
-        // playerx+=f/100;
         if(downKeys[K_RIGHT]){
             playerx+=f/3;
         }
@@ -231,10 +239,7 @@ function clearAll(){
     }
     
     function clear(){
-        // clear player
-        cx.fillStyle = C_BACKG;
-        cx.fillRect(playerx-playerw/2,c.height-playerh,
-                    playerw,playerh);
+        clearPlayer();
         clearBalls();
     }
 })();
