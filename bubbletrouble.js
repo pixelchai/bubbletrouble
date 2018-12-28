@@ -8,9 +8,11 @@ const K_DOWN = 40;
 const C_BACKG = '#222';
 var ballColours = [
     '#F25F5C',
+    '#FFE066',
+    '#70C1B3',
+    '#DD9892',
     // '#FFE066',
     // '#70C1B3',
-    // '#DD9892',
     // '#C9ADA7',
     // '#E07A5F',
     // '#81B29A',
@@ -47,17 +49,19 @@ cx = c.getContext('2d');
 
 //#region updating
 function updateBalls(){
-    var et = 0.9965; //not 100% efficient energy transfer
+    // var et = 0.9965; //not 100% efficient energy transfer
+    var et = 0.9;
     for(var i=0; i<balls.length; i++){
         var ball=balls[i];
+        var minvel = Math.min(-Math.log(ball.r)/5,-0.5);
         //wall collisions
         if(ball.y+ball.vy*f+ball.r>c.height){
             ball.y=c.height-ball.r;
-            ball.vy*=-1*et;
+            ball.vy=Math.min(ball.vy*-1*et,minvel);
         }
         else if(ball.y-ball.r<0){
             ball.y=ball.r;
-            ball.vy*=-1*et;
+            ball.vy=Math.min(ball.vy*-1*et,minvel);
         }
         if(ball.x+ball.vx*f+ball.r>c.width){
             ball.x=c.width-ball.r;
@@ -125,6 +129,7 @@ function updateShots(){
 
             if(ball.r>16){
                 ball.vy*=splitp;
+                ball.vy-=0.4;
                 ball.r*=splitp;
 
                 // clone
