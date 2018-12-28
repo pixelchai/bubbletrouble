@@ -7,6 +7,21 @@ const K_DOWN = 40;
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
 
+// colours
+const C_BACKG = '#222';
+var ballColours = [
+    '#F25F5C',
+    '#FFE066',
+    '#70C1B3',
+    '#DD9892',
+    '#C9ADA7',
+    '#E07A5F',
+    '#81B29A',
+    '#F2CC8F',
+    '#E1CE7A',
+    '#778DA9',
+]
+
 // engine vars
 var t = 0; //gametime
 var speed = 1; //gamespeed
@@ -22,6 +37,8 @@ var g = 0.001; //gravity
 
 // player vars
 var playerx = 0;
+var playerw = 0;
+var playerh = 0;
 
 function onKeyDown(e){
     downKeys[e.keyCode]=true;
@@ -30,13 +47,14 @@ function onKeyUp(e){
     downKeys[e.keyCode]=false;
 }
 
-function newBall(x,y,vx=0,vy=0, r=70){
+function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
     return {
       x:x,
       y:y,
       r:r,
       vx:vx,
       vy:vy,
+      colour:colour,
       m:20,//mass
       w:2,//width
       distanceToBall:function(ball2){
@@ -74,14 +92,16 @@ function updateBalls(){
 }
 
 function drawBall(ball){
+    cx.fillStyle = ball.colour;
     cx.beginPath();
-    cx.lineWidth = ball.w;
     cx.arc(ball.x, ball.y, ball.r, 0, 2 * Math.PI);
-    cx.stroke();
+    cx.closePath();
+    cx.fill();
 }
 
 function clearBall(ball){
-    cx.clearRect(ball.x-ball.r-ball.w,ball.y-ball.r-ball.w,(ball.r+ball.w)*2,(ball.r+ball.w)*2);
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(ball.x-ball.r-ball.w,ball.y-ball.r-ball.w,(ball.r+ball.w)*2,(ball.r+ball.w)*2);
 }
 
 function drawBalls(){
@@ -94,30 +114,35 @@ function drawPlayer(dir=1){
     // dir: 0 = normal
     //      1 = left
     //      2 = right
+    cx.strokeStyle = C_BACKG;
 
     cx.beginPath();
-    cx.lineWidth = 2;
+    cx.lineWidth = 3;
 
-    //body
     var body = c.height; // y coord base of body
     var bodh = 60; // body height
     var bodw = 15; // body width
-
-    cx.beginPath();
-    cx.moveTo(playerx-bodw,body);
-    cx.ellipse(playerx,body-bodh/2,bodw,bodh/2,0,Math.PI,2*Math.PI);
-    cx.lineTo(playerx+bodw,body);
-    cx.closePath();
-    cx.fill();
 
     // head
     var headw = 15;
     var headh = 10;
 
     cx.moveTo(playerx+headw,body-bodh-headh/2);
+    cx.fillStyle = '#C9ADA7';
     cx.beginPath();
     cx.ellipse(playerx,body-bodh-headh/2,headw,headh,0,0,7);
     cx.closePath();
+    cx.fill();
+    cx.stroke();
+
+    // body
+    cx.fillStyle = '#9A8C98';
+    cx.beginPath();
+    cx.moveTo(playerx-bodw,body);
+    cx.ellipse(playerx,body-bodh/2,bodw,bodh/2,0,Math.PI,2*Math.PI);
+    cx.lineTo(playerx+bodw,body);
+    cx.closePath();
+    cx.fill();
     cx.stroke();
 
     // hat
@@ -128,6 +153,7 @@ function drawPlayer(dir=1){
 
     // hat base line
     cx.moveTo(playerx+hatw,haty);
+    cx.fillStyle = '#4A4E69';
     cx.beginPath();
     cx.lineTo(playerx-hatw,haty);
     
@@ -141,12 +167,20 @@ function drawPlayer(dir=1){
     cx.lineTo(playerx+hatw,haty); // down
     cx.closePath();
     cx.fill();
+    cx.stroke();
+
+    playerh = bodh + 2*headh + hath + 3;
+    playerw = 2*hatw + 4;
 }
 
 function clearBalls(){
     for(var i=0; i< balls.length; i++){
         clearBall(balls[i]);
     }
+}
+
+function getRandomBallColour(){
+    return ballColours[Math.floor(Math.random()*ballColours.length)];
 }
 
 (function() {        
@@ -170,8 +204,11 @@ function clearBalls(){
         window.addEventListener("keydown",onKeyDown, false);
         window.addEventListener("keyup",onKeyUp, false);
 
+        cx.fillStyle = C_BACKG;
+        cx.fillRect(0, 0, c.width, c.height);
+
         playerx = c.width/2;
-        balls.push(newBall(30,30,0.3));
+        balls.push(newBall(30,30,0.3,0,70,getRandomBallColour()));
     }
     
     function update(){
@@ -191,7 +228,10 @@ function clearBalls(){
     }
     
     function clear(){
-        cx.clearRect(0,0,c.width,c.height);
-        //clearBalls();
+        // clear player
+        cx.fillStyle = C_BACKG;
+        cx.fillRect(playerx-playerw/2,c.height-playerh,
+                    playerw,playerh);
+        clearBalls();
     }
 })();
