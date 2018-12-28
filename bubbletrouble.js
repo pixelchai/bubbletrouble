@@ -8,50 +8,56 @@ const K_DOWN = 40;
 const C_BACKG = '#222';
 var ballColours = [
     '#F25F5C',
-    '#FFE066',
-    '#70C1B3',
-    '#DD9892',
-    '#C9ADA7',
-    '#E07A5F',
-    '#81B29A',
-    '#F2CC8F',
-    '#E1CE7A',
-    '#778DA9',
+    // '#FFE066',
+    // '#70C1B3',
+    // '#DD9892',
+    // '#C9ADA7',
+    // '#E07A5F',
+    // '#81B29A',
+    // '#F2CC8F',
+    // '#E1CE7A',
+    // '#778DA9',
 ]
 
 // engine vars
-var t = 0; //gametime
-var speed = 1; //gamespeed
-var fps = 120;//max is 1000
+var t = 0; // gametime
+var speed = 1; // gamespeed
+var fps = 120;// max is 1000
 var f = 1000.0/fps*speed;
 
 // control vars
 var downKeys = {}; // key: Key code, value: down/up
 
 // ball/physics vars
-var balls = [];//list of ball objects
-var g = 0.001; //gravity
+var balls = [];// list of ball objects
+var g = 0.001; // gravity
+var splitp = 0.5; // proportion of parent's radius children balls' radiuses should be
 
 // player vars
-var playerx = 0;
-var playerw = 0;
+var playerx = 0; // x coord middle of player
+var playerw = 0; // total width player
 var playerh = 0;
+
+// shot vars
+var shotx = -1;
+var shoth = -1;
 
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
 
 //#region updating
 function updateBalls(){
+    var et = 0.9965; //not 100% efficient energy transfer
     for(var i=0; i<balls.length; i++){
         var ball=balls[i];
         //wall collisions
         if(ball.y+ball.vy*f+ball.r>c.height){
             ball.y=c.height-ball.r;
-            ball.vy*=-0.99; //not 100% efficient energy transfer
+            ball.vy*=-1*et;
         }
         else if(ball.y-ball.r<0){
             ball.y=ball.r;
-            ball.vy*=-0.99;
+            ball.vy*=-1*et;
         }
         if(ball.x+ball.vx*f+ball.r>c.width){
             ball.x=c.width-ball.r;
@@ -67,6 +73,86 @@ function updateBalls(){
 
         ball.vy=ball.vy+g*f;
     }
+}
+
+function updatePlayer(){
+    // controls
+    if(downKeys[K_RIGHT]){
+        playerx+=f/3;
+    }
+    if(downKeys[K_LEFT]){
+        playerx-=f/3;
+    }
+    if(downKeys[K_UP]){
+        //shoot
+        if(shoth<=-1 && shotx<=-1){
+            shotx = playerx;
+            shoth = playerh;
+        }
+    }
+
+    // bounds
+    if(playerx+playerw/2>c.width){
+        playerx=c.width-playerw/2;
+    }
+    if(playerx-playerw/2<0){
+        playerx=playerw/2;
+    }
+
+}
+
+function updateShots(){
+    if(shoth<=-1 && shotx<=-1){
+        return;
+    }
+
+    // grow
+    if(shoth<c.height){
+        shoth+=f;
+    }else{
+        shoth = -1;
+        shotx = -1;
+        return; // maybe impl sticky here
+    }
+
+    // collision work
+    for (var i=balls.length-1;i>=0;i--){
+        const ball = balls[i];
+        if(shotHits(ball.x,ball.y,ball.r,shotx,shoth)){
+            // reset shot
+            shoth = -1;
+            shotx = -1;
+
+            if(ball.r>16){
+                ball.vy*=splitp;
+                ball.r*=splitp;
+
+                // clone
+                var child = JSON.parse(JSON.stringify(ball));
+                child.vx*=-1;
+                
+                balls.push(child);
+            }else{
+                balls.splice(i,1);
+            }
+        }
+    }
+
+}
+//#endregion
+
+//#region calculation
+function shotHits(cx,cy,r,sx,sh) {
+    h=c.height-sh;
+    if(sx-cx<=r && cx-sx<=r){
+        if(h<cy){
+            // above centre = easy case
+            return true;
+        }else{
+            return Math.pow(cx-sx,2)+Math.pow(cy-h,2)<=Math.pow(r,2);
+        }
+    }
+    return false;
 }
 //#endregion
 
@@ -144,6 +230,15 @@ function drawPlayer(){
     playerh = bodh + 2*headh + hath + 3;
     playerw = 2*hatw + 4;
 }
+
+function drawShots(){
+    cx.strokeStyle = '#9FA09F';
+    cx.lineWidth = 3;
+    cx.beginPath();
+    cx.moveTo(shotx,c.height);
+    cx.lineTo(shotx,c.height-shoth);
+    cx.stroke();
+}
 //#endregion
 
 //#region clearing
@@ -155,7 +250,7 @@ function clearAll(){
 
 function clearBall(ball){
     cx.fillStyle = C_BACKG;
-    cx.fillRect(ball.x-ball.r-ball.w,ball.y-ball.r-ball.w,(ball.r+ball.w)*2,(ball.r+ball.w)*2);
+    cx.fillRect(ball.x-ball.r-3,ball.y-ball.r-3,(ball.r+3)*2,(ball.r+3)*2);
 }
 
 function clearBalls(){
@@ -169,6 +264,12 @@ function clearPlayer(){
     cx.fillRect(playerx-playerw/2,c.height-playerh,
                 playerw,playerh);
 }
+
+function clearShots(){
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(shotx-3,0,
+                6,c.height);
+}
 //#endregion
 
 function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
@@ -180,7 +281,6 @@ function newBall(x,y,vx=0,vy=0,r=70,colour='#fff'){
       vy:vy,
       colour:colour,
       m:20,//mass
-      w:2,//width
     }
 }
 
@@ -220,25 +320,24 @@ function getRandomBallColour(){
         clearAll();
 
         playerx = c.width/2; // center player
-        balls.push(newBall(30,30,0.3,0,70,getRandomBallColour()));
+        balls.push(newBall(80,c.height/2,0.2,0,100,getRandomBallColour()));
+        balls.push(newBall(c.width-80,c.height/2,-0.2,0,100,getRandomBallColour()));
     }
     
     function update(){
-        if(downKeys[K_RIGHT]){
-            playerx+=f/3;
-        }
-        if(downKeys[K_LEFT]){
-            playerx-=f/3;
-        }
+        updatePlayer();
+        updateShots();
         updateBalls();
     }
     
     function draw(){
         drawBalls();
+        drawShots();
         drawPlayer();
     }
     
     function clear(){
+        clearShots();
         clearPlayer();
         clearBalls();
     }
