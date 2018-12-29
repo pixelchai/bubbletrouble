@@ -26,6 +26,8 @@ var t = 0; // gametime
 var speed = 1; // gamespeed
 var fps = 120;// max is 1000
 var f = 1000.0/fps*speed;
+var freeze = false;
+
 
 // control vars
 var downKeys = {}; // key: Key code, value: down/up
@@ -44,8 +46,11 @@ var playerh = 0;
 var shotx = -1;
 var shoth = -1;
 
-// misc vars
-var freeze = false;
+// stage vars
+var stageDiff = 5; // difficulty heuristic for stage
+var sizeFactor = 935; // factor for increasing difficulty with size (standard size)
+var minBalls = 1;
+var maxBalls = 4;
 
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
@@ -61,8 +66,22 @@ function newStage(){
     shoth = -1;
     shotx = -1;
 
-    balls.push(newBall(80,c.height/2,0.2,0,100,getRandomBallColour()));
-    balls.push(newBall(c.width-80,c.height/2,-0.2,0,100,getRandomBallColour()));
+    //update min no of balls if need be (req radius for difficulty too big)
+    if((100*stageDiff)/(15*minBalls)*(c.width/sizeFactor)>320){
+        minBalls+=1;
+        maxBalls+=1;
+    }
+
+    var n = Math.floor(Math.random()*(maxBalls-minBalls+1))+minBalls; // no balls: random int min-max
+    // work out radiuses of balls so as to achieve req difficulty heuristic
+    var r = (100*stageDiff)/(15*n);
+    r*=(c.width/sizeFactor); // factor in screen width
+
+    var dd = c.width/(n+1); // delta d: space between each ball
+    //spawn balls
+    for (var i=0;i<n;i++){
+        balls.push(newBall((i+1)*dd,c.height/2,0.2,0,r,getRandomBallColour()));
+    }
 }
 //#endregion
 
@@ -71,6 +90,7 @@ function updateBalls(){
 
     if(balls.length<=0){
         newStage();
+        stageDiff+=5;
         return;
     }
 
@@ -98,8 +118,8 @@ function updateBalls(){
             ball.vy=Math.min(ball.vy*-1*et,minvel);
         }
         else if(ball.y-ball.r<0){
-            ball.y=ball.r;
-            ball.vy=Math.min(ball.vy*-1*et,minvel);
+            ball.y=ball.r+5;
+            ball.vy=Math.min(ball.vy*-1*et,-1*minvel);
         }
         if(ball.x+ball.vx*f+ball.r>c.width){
             ball.x=c.width-ball.r;
@@ -165,7 +185,9 @@ function updateShots(){
             shoth = -1;
             shotx = -1;
 
-            if(ball.r>16){
+
+            if(ball.r>16*(c.width/sizeFactor)){
+                //(factors in screen width) ^
                 ball.vy*=splitp;
                 ball.vy-=0.4;
                 ball.r*=splitp;
