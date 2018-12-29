@@ -11,14 +11,6 @@ var ballColours = [
     '#FFE066',
     '#70C1B3',
     '#DD9892',
-    // '#FFE066',
-    // '#70C1B3',
-    // '#C9ADA7',
-    // '#E07A5F',
-    // '#81B29A',
-    // '#F2CC8F',
-    // '#E1CE7A',
-    // '#778DA9',
 ]
 
 // engine vars
@@ -51,6 +43,10 @@ var stageDiff = 5; // difficulty heuristic for stage
 var sizeFactor = 935; // factor for increasing difficulty with size (standard size)
 var minBalls = 1;
 var maxBalls = 4;
+
+// game vars
+var lives = 4;
+var stageNo = 1;
 
 var c = document.getElementById('c'),
 cx = c.getContext('2d');
@@ -89,8 +85,10 @@ function newStage(){
 function updateBalls(){
 
     if(balls.length<=0){
-        newStage();
+        // won stage
         stageDiff+=5;
+        stageNo+=1;
+        newStage();
         return;
     }
 
@@ -100,6 +98,14 @@ function updateBalls(){
 
         // player collision
         if(ballHits(ball.x,ball.y,ball.r,playerx-playerw/2,c.height,playerw,playerh)){
+            // died
+            lives-=1;
+            if(lives==0){
+                // out of lives (reset)
+                lives = 4;
+                stageDiff = 5;
+                stageNo = 1;
+            }
 
             ball.colour = '#fff';
             drawBall(ball);
@@ -319,6 +325,23 @@ function drawShots(){
     cx.lineTo(shotx,c.height-shoth);
     cx.stroke();
 }
+
+function drawOverlay(){
+    cx.font = '40px Arial';
+    cx.fillStyle = '#eee';
+
+    // lives
+    var livesString = '';
+    for(var i=0; i<lives; i++){
+        livesString+='❤';
+    }
+    cx.fillText(livesString,10,40);
+
+    // stage
+    cx.font = '40px Arial';
+    var stageString = '⚑ '+stageNo.toString();
+    cx.fillText(stageString,c.width/2,40);
+}
 //#endregion
 
 //#region clearing
@@ -349,6 +372,12 @@ function clearShots(){
     cx.fillStyle = C_BACKG;
     cx.fillRect(shotx-3,0,
                 6,c.height);
+}
+
+function clearOverlay(){
+    cx.fillStyle = C_BACKG;
+    cx.fillRect(0,0,
+                c.width,43);
 }
 //#endregion
 
@@ -416,9 +445,11 @@ function getRandomBallColour(){
         drawBalls();
         drawShots();
         drawPlayer();
+        drawOverlay();
     }
     
     function clear(){
+        clearOverlay();
         clearShots();
         clearPlayer();
         clearBalls();
